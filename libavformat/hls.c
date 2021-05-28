@@ -47,6 +47,8 @@
 #define MPEG_TIME_BASE 90000
 #define MPEG_TIME_BASE_Q (AVRational){1, MPEG_TIME_BASE}
 
+#define trace_stall(args...) printf("%s|%s|%d trace-hls-stall ", __FILE__, __FUNCTION__, __LINE__);printf(args);printf("\n")
+
 /*
  * An apple http stream consists of a playlist with media segment files,
  * played sequentially. There may be several playlists with the same
@@ -1446,6 +1448,7 @@ restart:
         if (!v->needed) {
             av_log(v->parent, AV_LOG_INFO, "No longer receiving playlist %d ('%s')\n",
                    v->index, v->url);
+            trace_stall("AVERROR_EOF");
             return AVERROR_EOF;
         }
 
@@ -1455,14 +1458,17 @@ restart:
 
 reload:
         reload_count++;
-        if (reload_count > c->max_reload)
+        if (reload_count > c->max_reload) {
+            trace_stall("AVERROR_EOF");
             return AVERROR_EOF;
+        }
         if (!v->finished &&
             av_gettime_relative() - v->last_load_time >= reload_interval) {
             if ((ret = parse_playlist(c, v->url, v, NULL)) < 0) {
                 if (ret != AVERROR_EXIT)
                     av_log(v->parent, AV_LOG_WARNING, "Failed to reload playlist %d\n",
                            v->index);
+                trace_stall("return ret: %d", ret);
                 return ret;
             }
             /* If we need to reload the playlist again below (if
@@ -1482,6 +1488,7 @@ reload:
         } else if (v->last_seq_no == v->cur_seq_no) {
             v->m3u8_hold_counters++;
             if (v->m3u8_hold_counters >= c->m3u8_hold_counters) {
+                trace_stall("AVERROR_EOF");
                 return AVERROR_EOF;
             }
         } else {
@@ -1496,6 +1503,7 @@ reload:
                 av_usleep(100*1000);
             }
             /* Enough time has elapsed since the last reload */
+            trace_stall("goto reload, cur_seq_no:%d start_seq_no:%d v->n_segments:%d", v->cur_init_section, v->start_seq_no, v->n_segments);
             goto reload;
         }
 
@@ -1504,24 +1512,31 @@ reload:
 
         /* load/update Media Initialization Section, if any */
         ret = update_init_section(v, seg);
-        if (ret)
+        if (ret) {
+            trace_stall("return ret:%d", ret);
             return ret;
+        }
 
         if (c->http_multiple == 1 && v->input_next_requested) {
             FFSWAP(AVIOContext *, v->input, v->input_next);
             v->cur_seg_offset = 0;
             v->input_next_requested = 0;
             ret = 0;
+            trace_stall("c->http_multiple:%d v->input_next_requested:%d", c->http_multiple, v->input_next_requested);
         } else {
+            trace_stall("open url: %s", seg->url);
             ret = open_input(c, v, seg, &v->input);
         }
         if (ret < 0) {
-            if (ff_check_interrupt(c->interrupt_callback))
+            if (ff_check_interrupt(c->interrupt_callback)) {
+                trace_stall("AVERROR_EXIT");
                 return AVERROR_EXIT;
+            }
             av_log(v->parent, AV_LOG_WARNING, "Failed to open segment %"PRId64" of playlist %d\n",
                    v->cur_seq_no,
                    v->index);
             v->cur_seq_no += 1;
+            trace_stall("goto reload");
             goto reload;
         }
         just_opened = 1;
@@ -1539,6 +1554,7 @@ reload:
     seg = next_segment(v);
     if (c->http_multiple == 1 && !v->input_next_requested &&
         seg && seg->key_type == KEY_NONE && av_strstart(seg->url, "http", NULL)) {
+        trace_stall("open url: %s", seg->url);
         ret = open_input(c, v, seg, &v->input_next);
         if (ret < 0) {
             if (ff_check_interrupt(c->interrupt_callback))
@@ -1547,6 +1563,7 @@ reload:
                    v->cur_seq_no + 1,
                    v->index);
         } else {
+            trace_stall("c->http_multiple:%d v->input_next_requested:%d, seg->key_type:%d url:%s", c->http_multiple, v->input_next_requested, seg->key_type, seg->url);
             v->input_next_requested = 1;
         }
     }
