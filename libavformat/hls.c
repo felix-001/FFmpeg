@@ -1503,7 +1503,7 @@ reload:
                 av_usleep(100*1000);
             }
             /* Enough time has elapsed since the last reload */
-            trace_stall("goto reload, cur_seq_no:%d start_seq_no:%d v->n_segments:%d", v->cur_init_section, v->start_seq_no, v->n_segments);
+            trace_stall("goto reload, cur_seq_no:%lld start_seq_no:%lld v->n_segments:%d", v->cur_seq_no, v->start_seq_no, v->n_segments);
             goto reload;
         }
 
