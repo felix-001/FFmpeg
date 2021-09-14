@@ -435,6 +435,7 @@ static int init_input(AVFormatContext *s, const char *filename,
         (!s->iformat && (s->iformat = av_probe_input_format2(&pd, 0, &score))))
         return score;
 
+    printf("call s->io_open\n");
     if ((ret = s->io_open(s, &s->pb, filename, AVIO_FLAG_READ | s->avio_flags, options)) < 0)
         return ret;
 
@@ -645,6 +646,7 @@ FF_ENABLE_DEPRECATION_WARNINGS
     }
 
     if (id3v2_extra_meta) {
+        printf("avformat_open_input s->iformat->name:%s", s->iformat->name);
         if (!strcmp(s->iformat->name, "mp3") || !strcmp(s->iformat->name, "aac") ||
             !strcmp(s->iformat->name, "tta") || !strcmp(s->iformat->name, "wav")) {
             if ((ret = ff_id3v2_parse_apic(s, &id3v2_extra_meta)) < 0)

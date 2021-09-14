@@ -42,25 +42,37 @@ static int adts_aac_probe(const AVProbeData *p)
 
     buf = buf0;
 
+    printf("adts_aac_probe\n");
     for (; buf < end; buf = buf2 + 1) {
         buf2 = buf;
 
         for (frames = 0; buf2 < end; frames++) {
             uint32_t header = AV_RB16(buf2);
+            // 6 - 0110
+            // 判断layer必须为0
+            // 判断是否为adts头开始
             if ((header & 0xFFF6) != 0xFFF0) {
+                printf("header:0x%x\n", header);
                 if (buf != buf0) {
                     // Found something that isn't an ADTS header, starting
                     // from a position other than the start of the buffer.
                     // Discard the count we've accumulated so far since it
                     // probably was a false positive.
+                    if (frames)
+                        printf("Found something that isn't an ADTS header\n");
                     frames = 0;
                 }
                 break;
             }
-            fsize = (AV_RB32(buf2 + 3) >> 13) & 0x1FFF;
-            if (fsize < 7)
+            // aac音频帧的大小
+            fsize = (AV_RB32(buf2 + 3) >> 13) & 0x1FFF;// aac_frame_length
+            if (fsize < 7) {
+                printf("adts_aac_probe break 2\n");
                 break;
+            }
+            printf("frame length:%d\n", fsize);
             fsize = FFMIN(fsize, end - buf2);
+            // 跳到下一帧
             buf2 += fsize;
         }
         max_frames = FFMAX(max_frames, frames);
@@ -68,16 +80,24 @@ static int adts_aac_probe(const AVProbeData *p)
             first_frames = frames;
     }
 
-    if (first_frames >= 3)
+    printf("first_frames:%d\n", first_frames);
+    printf("max_frames :%d\n", max_frames);
+    if (first_frames >= 3) {
+        printf("adts_aac_probe return 51\n");
         return AVPROBE_SCORE_EXTENSION + 1;
-    else if (max_frames > 100)
+    } else if (max_frames > 100) {
+        printf("adts_aac_probe return 50\n");
         return AVPROBE_SCORE_EXTENSION;
-    else if (max_frames >= 3)
+    } else if (max_frames >= 3) {
+        printf("adts_aac_probe return 25\n");
         return AVPROBE_SCORE_EXTENSION / 2;
-    else if (first_frames >= 1)
+    } else if (first_frames >= 1) {
+        printf("adts_aac_probe return 1\n");
         return 1;
-    else
+    } else {
+        printf("adts_aac_probe return 0\n");
         return 0;
+    }
 }
 
 static int adts_aac_resync(AVFormatContext *s)

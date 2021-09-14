@@ -2905,6 +2905,29 @@ static void apply_channel_coupling(AACContext *ac, ChannelElement *cc,
     }
 }
 
+void BackTrace(void) {
+           int nptrs;
+           void *buffer[1024];
+           char **strings;
+
+           nptrs = backtrace(buffer, 1024);
+           printf("backtrace() returned %d addresses\n", nptrs);
+
+           /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
+              would produce similar output to the following: */
+
+           strings = backtrace_symbols(buffer, nptrs);
+           if (strings == NULL) {
+               perror("backtrace_symbols");
+               exit(EXIT_FAILURE);
+           }
+
+           for (int j = 0; j < nptrs; j++)
+               printf("%s\n", strings[j]);
+
+           free(strings);
+       }
+
 /**
  * Convert spectral data to samples, applying all supported tools as appropriate.
  */
@@ -2974,6 +2997,7 @@ static void spectral_to_sample(AACContext *ac, int samples)
 #endif /* USE_FIXED */
                 che->present = 0;
             } else if (che) {
+                BackTrace();
                 av_log(ac->avctx, AV_LOG_VERBOSE, "ChannelElement %d.%d missing \n", type, i);
             }
         }

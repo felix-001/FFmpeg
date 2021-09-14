@@ -164,6 +164,8 @@ ff_const59 AVInputFormat *av_probe_input_format3(ff_const59 AVProbeData *pd, int
         if (fmt1->read_probe) {
             score = fmt1->read_probe(&lpd);
             if (score)
+                printf("Probing %s score:%d size:%d\n", fmt1->name, score, lpd.buf_size);
+            if (score)
                 av_log(NULL, AV_LOG_TRACE, "Probing %s score:%d size:%d\n", fmt1->name, score, lpd.buf_size);
             if (fmt1->extensions && av_match_ext(lpd.filename, fmt1->extensions)) {
                 switch (nodat) {
@@ -183,6 +185,8 @@ ff_const59 AVInputFormat *av_probe_input_format3(ff_const59 AVProbeData *pd, int
             if (av_match_ext(lpd.filename, fmt1->extensions))
                 score = AVPROBE_SCORE_EXTENSION;
         }
+        if (lpd.mime_type)
+            printf("mime_type %s %s\n", lpd.mime_type, fmt1->mime_type);
         if (av_match_name(lpd.mime_type, fmt1->mime_type)) {
             if (AVPROBE_SCORE_MIME > score) {
                 av_log(NULL, AV_LOG_DEBUG, "Probing %s score:%d increased to %d due to MIME type\n", fmt1->name, score, AVPROBE_SCORE_MIME);
@@ -205,6 +209,8 @@ ff_const59 AVInputFormat *av_probe_input_format3(ff_const59 AVProbeData *pd, int
 ff_const59 AVInputFormat *av_probe_input_format2(ff_const59 AVProbeData *pd, int is_opened, int *score_max)
 {
     int score_ret;
+
+    printf("av_probe_input_format2 in\n");
     ff_const59 AVInputFormat *fmt = av_probe_input_format3(pd, is_opened, &score_ret);
     if (score_ret > *score_max) {
         *score_max = score_ret;
@@ -229,6 +235,7 @@ int av_probe_input_buffer2(AVIOContext *pb, ff_const59 AVInputFormat **fmt,
     int score = 0;
     int ret2;
 
+    printf("av_probe_input_buffer2 in\n");
     if (!max_probe_size)
         max_probe_size = PROBE_BUF_MAX;
     else if (max_probe_size < PROBE_BUF_MIN) {
@@ -276,6 +283,7 @@ int av_probe_input_buffer2(AVIOContext *pb, ff_const59 AVInputFormat **fmt,
 
         memset(pd.buf + pd.buf_size, 0, AVPROBE_PADDING_SIZE);
 
+        printf("av_probe_input_buffer2 call av_probe_input_format2\n");
         /* Guess file format. */
         *fmt = av_probe_input_format2(&pd, 1, &score);
         if (*fmt) {

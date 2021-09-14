@@ -2839,6 +2839,7 @@ static int open_input_file(InputFile *ifile, const char *filename)
     AVDictionaryEntry *t;
     int scan_all_pmts_set = 0;
 
+    printf("open_input_file\n");
     fmt_ctx = avformat_alloc_context();
     if (!fmt_ctx) {
         print_error(filename, AVERROR(ENOMEM));
@@ -2878,7 +2879,9 @@ static int open_input_file(InputFile *ifile, const char *filename)
         }
     }
 
+    printf("start dump format\n");
     av_dump_format(fmt_ctx, 0, filename, 0);
+    printf("dump format done\n");
 
     ifile->streams = av_mallocz_array(fmt_ctx->nb_streams,
                                       sizeof(*ifile->streams));
@@ -2980,6 +2983,7 @@ static int probe_file(WriterContext *wctx, const char *filename)
     if (ret < 0)
         goto end;
 
+    printf("open_input_file done\n");
 #define CHECK_END if (ret < 0) goto end
 
     nb_streams = ifile.fmt_ctx->nb_streams;
@@ -3020,20 +3024,28 @@ static int probe_file(WriterContext *wctx, const char *filename)
     }
 
     if (do_show_programs) {
+        printf("start do_show_programs\n");
         ret = show_programs(wctx, &ifile);
+        printf("end do_show_programs\n");
         CHECK_END;
     }
 
     if (do_show_streams) {
+        printf("start do_show_streams\n");
         ret = show_streams(wctx, &ifile);
+        printf("end do_show_streams\n");
         CHECK_END;
     }
     if (do_show_chapters) {
+        printf("start do_show_chapters\n");
         ret = show_chapters(wctx, &ifile);
+        printf("end do_show_chapters\n");
         CHECK_END;
     }
     if (do_show_format) {
+        printf("start do_show_format\n");
         ret = show_format(wctx, &ifile);
+        printf("end do_show_format\n");
         CHECK_END;
     }
 
@@ -3680,6 +3692,7 @@ int main(int argc, char **argv)
         if (do_show_pixel_formats)
             ffprobe_show_pixel_formats(wctx);
 
+        printf("input_filename:%s\n", input_filename);
         if (!input_filename &&
             ((do_show_format || do_show_programs || do_show_streams || do_show_chapters || do_show_packets || do_show_error) ||
              (!do_show_program_version && !do_show_library_versions && !do_show_pixel_formats))) {
