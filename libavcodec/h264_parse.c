@@ -359,6 +359,7 @@ int ff_h264_init_poc(int pic_field_poc[2], int *pic_poc,
     return 0;
 }
 
+// 解码sps或者pps
 static int decode_extradata_ps(const uint8_t *data, int size, H264ParamSets *ps,
                                int is_avc, void *logctx)
 {

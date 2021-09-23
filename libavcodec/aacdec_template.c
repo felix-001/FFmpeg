@@ -91,6 +91,11 @@
 
 #include "libavutil/thread.h"
 
+void BackTrace(void);
+
+#define BASIC() printf("%s:%d(%s)# ", __FILE__, __LINE__, __FUNCTION__)
+#define log(args...) do { BASIC();printf(args);printf("\n"); } while(0)
+
 static VLC vlc_scalefactors;
 static VLC vlc_spectral[11];
 
@@ -2905,28 +2910,7 @@ static void apply_channel_coupling(AACContext *ac, ChannelElement *cc,
     }
 }
 
-void BackTrace(void) {
-           int nptrs;
-           void *buffer[1024];
-           char **strings;
-
-           nptrs = backtrace(buffer, 1024);
-           printf("backtrace() returned %d addresses\n", nptrs);
-
-           /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
-              would produce similar output to the following: */
-
-           strings = backtrace_symbols(buffer, nptrs);
-           if (strings == NULL) {
-               perror("backtrace_symbols");
-               exit(EXIT_FAILURE);
-           }
-
-           for (int j = 0; j < nptrs; j++)
-               printf("%s\n", strings[j]);
-
-           free(strings);
-       }
+ 
 
 /**
  * Convert spectral data to samples, applying all supported tools as appropriate.
@@ -3012,6 +2996,10 @@ static int parse_adts_frame_header(AACContext *ac, GetBitContext *gb)
     int layout_map_tags, ret;
 
     size = ff_adts_header_parse(gb, &hdr_info);
+    log("sample_rate:%d", hdr_info.sample_rate);
+    log("sampling_index:%d", hdr_info.sampling_index);
+    log("num_aac_frames:%d", hdr_info.num_aac_frames);
+    log("aac_frame_length:%d", size);
     if (size > 0) {
         if (!ac->warned_num_aac_frames && hdr_info.num_aac_frames != 1) {
             // This is 2 for "VLB " audio in NSV files.

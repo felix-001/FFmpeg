@@ -978,6 +978,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
     if (buf_size == 0)
         return send_next_delayed_frame(h, pict, got_frame, 0);
 
+    // 这里用来解析sps/pps
+    // 解析AVCodecContext的extradata(里面实际上存储了H.264的SPS、PPS）
     if (h->is_avc && av_packet_get_side_data(avpkt, AV_PKT_DATA_NEW_EXTRADATA, NULL)) {
         int side_size;
         uint8_t *side = av_packet_get_side_data(avpkt, AV_PKT_DATA_NEW_EXTRADATA, &side_size);
@@ -986,6 +988,7 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
                                      &h->ps, &h->is_avc, &h->nal_length_size,
                                      avctx->err_recognition, avctx);
     }
+    // 又一次解析sps/pps
     if (h->is_avc && buf_size >= 9 && buf[0]==1 && buf[2]==0 && (buf[4]&0xFC)==0xFC) {
         if (is_extra(buf, buf_size))
             return ff_h264_decode_extradata(buf, buf_size,
@@ -997,6 +1000,7 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
     if (buf_index < 0)
         return AVERROR_INVALIDDATA;
 
+    // nalu 序列结束了
     if (!h->cur_pic_ptr && h->nal_unit_type == H264_NAL_END_SEQUENCE) {
         av_assert0(buf_index <= buf_size);
         return send_next_delayed_frame(h, pict, got_frame, buf_index);

@@ -31,6 +31,40 @@
 
 #define ADTS_HEADER_SIZE 7
 
+#include <execinfo.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+void BackTrace(void);
+
+void BackTrace(void) 
+{
+#if 0
+           int nptrs;
+           void *buffer[1024];
+           char **strings;
+
+           nptrs = backtrace(buffer, 1024);
+           //printf("backtrace() returned %d addresses\n", nptrs);
+
+           /* The call backtrace_symbols_fd(buffer, nptrs, STDOUT_FILENO)
+              would produce similar output to the following: */
+
+           strings = backtrace_symbols(buffer, nptrs);
+           if (strings == NULL) {
+               perror("backtrace_symbols");
+               exit(EXIT_FAILURE);
+           }
+
+           for (int j = 0; j < nptrs; j++)
+               printf("%s\n", strings[j]);
+
+           free(strings);
+#endif
+}
+
+
 static int adts_aac_probe(const AVProbeData *p)
 {
     int max_frames = 0, first_frames = 0;
@@ -52,7 +86,7 @@ static int adts_aac_probe(const AVProbeData *p)
             // 判断layer必须为0
             // 判断是否为adts头开始
             if ((header & 0xFFF6) != 0xFFF0) {
-                printf("header:0x%x\n", header);
+                //printf("header:0x%x\n", header);
                 if (buf != buf0) {
                     // Found something that isn't an ADTS header, starting
                     // from a position other than the start of the buffer.
