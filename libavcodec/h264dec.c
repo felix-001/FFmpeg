@@ -650,6 +650,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
         err = 0;
         switch (nal->type) {
         case H264_NAL_IDR_SLICE:
+            printf("H264_NAL_IDR_SLICE\n");
             if ((nal->data[1] & 0xFC) == 0x98) {
                 av_log(h->avctx, AV_LOG_ERROR, "Invalid inter IDR frame\n");
                 h->next_outputed_poc = INT_MIN;
@@ -662,6 +663,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
             idr_cleared = 1;
             h->has_recovery_point = 1;
         case H264_NAL_SLICE:
+            printf("H264_NAL_SLICE\n");
             h->has_slice = 1;
 
             if ((err = ff_h264_queue_decode_slice(h, nal))) {
@@ -696,9 +698,11 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
         case H264_NAL_DPA:
         case H264_NAL_DPB:
         case H264_NAL_DPC:
+            printf("H264_NAL_DPA/B/C\n");
             avpriv_request_sample(avctx, "data partitioning");
             break;
         case H264_NAL_SEI:
+            printf("H264_NAL_SEI\n");
             ret = ff_h264_sei_decode(&h->sei, &nal->gb, &h->ps, avctx);
             h->has_recovery_point = h->has_recovery_point || h->sei.recovery_point.recovery_frame_cnt != -1;
             if (avctx->debug & FF_DEBUG_GREEN_MD)
@@ -707,6 +711,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
                 goto end;
             break;
         case H264_NAL_SPS: {
+            printf("H264_NAL_SPS\n");
             GetBitContext tmp_gb = nal->gb;
             if (avctx->hwaccel && avctx->hwaccel->decode_params) {
                 ret = avctx->hwaccel->decode_params(avctx,
@@ -727,6 +732,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
             break;
         }
         case H264_NAL_PPS:
+            printf("H264_NAL_PPS\n");
             if (avctx->hwaccel && avctx->hwaccel->decode_params) {
                 ret = avctx->hwaccel->decode_params(avctx,
                                                     nal->type,
@@ -983,6 +989,7 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
     if (h->is_avc && av_packet_get_side_data(avpkt, AV_PKT_DATA_NEW_EXTRADATA, NULL)) {
         int side_size;
         uint8_t *side = av_packet_get_side_data(avpkt, AV_PKT_DATA_NEW_EXTRADATA, &side_size);
+        printf("side_size:%d\n", side_size);
         if (is_extra(side, side_size))
             ff_h264_decode_extradata(side, side_size,
                                      &h->ps, &h->is_avc, &h->nal_length_size,
@@ -1010,6 +1017,8 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
         if (avctx->skip_frame >= AVDISCARD_NONREF ||
             buf_size >= 4 && !memcmp("Q264", buf, 4))
             return buf_size;
+        printf("nal_unit_type:%d\n", h->nal_unit_type);
+        printf("buf_size:%d\n", buf_size);
         av_log(avctx, AV_LOG_ERROR, "no frame!\n");
         return AVERROR_INVALIDDATA;
     }

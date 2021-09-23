@@ -359,4 +359,7 @@ int av_log_get_flags(void);
  * @}
  */
 
+#define BASIC() printf("%s:%d(%s)# ", __FILE__, __LINE__, __FUNCTION__)
+#define trace_log(args...) do { BASIC();printf(args);printf("\n"); } while(0)
+
 #endif /* AVUTIL_LOG_H */

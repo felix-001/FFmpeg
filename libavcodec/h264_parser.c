@@ -323,16 +323,20 @@ static inline int parse_nal_units(AVCodecParserContext *s,
 
         switch (nal.type) {
         case H264_NAL_SPS:
+            trace_log("H264_NAL_SPS");
             ff_h264_decode_seq_parameter_set(&nal.gb, avctx, &p->ps, 0);
             break;
         case H264_NAL_PPS:
+            trace_log("H264_NAL_PPS");
             ff_h264_decode_picture_parameter_set(&nal.gb, avctx, &p->ps,
                                                  nal.size_bits);
             break;
         case H264_NAL_SEI:
+            trace_log("H264_NAL_SEI");
             ff_h264_sei_decode(&p->sei, &nal.gb, &p->ps, avctx);
             break;
         case H264_NAL_IDR_SLICE:
+            trace_log("H264_NAL_IDR_SLICE");
             s->key_frame = 1;
 
             p->poc.prev_frame_num        = 0;
@@ -341,6 +345,7 @@ static inline int parse_nal_units(AVCodecParserContext *s,
             p->poc.prev_poc_lsb          = 0;
         /* fall through */
         case H264_NAL_SLICE:
+            trace_log("H264_NAL_SLICE");
             get_ue_golomb_long(&nal.gb);  // skip first_mb_in_slice
             slice_type   = get_ue_golomb_31(&nal.gb);
             s->pict_type = ff_h264_golomb_to_pict_type[slice_type % 5];
