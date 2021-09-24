@@ -635,6 +635,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
     if (nals_needed < 0)
         return nals_needed;
 
+    trace_log("nb_nals:%d", h->pkt.nb_nals);
     for (i = 0; i < h->pkt.nb_nals; i++) {
         H2645NAL *nal = &h->pkt.nals[i];
         int max_slice_ctx, err;
@@ -1017,7 +1018,7 @@ static int h264_decode_frame(AVCodecContext *avctx, void *data,
         if (avctx->skip_frame >= AVDISCARD_NONREF ||
             buf_size >= 4 && !memcmp("Q264", buf, 4))
             return buf_size;
-        printf("nal_unit_type:%d\n", h->nal_unit_type);
+        printf("nal_unit_type:%d cur_pic_ptr : %p has_slice : %d\n", h->nal_unit_type, h->cur_pic_ptr, h->has_slice);
         printf("buf_size:%d\n", buf_size);
         av_log(avctx, AV_LOG_ERROR, "no frame!\n");
         return AVERROR_INVALIDDATA;
