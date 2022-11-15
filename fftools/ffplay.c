@@ -107,6 +107,8 @@ const int program_birth_year = 2003;
 
 #define USE_ONEPASS_SUBTITLE_RENDER 1
 
+#define LOGI(args...) printf("%s:%d(%s)# ", __FILE__, __LINE__, __FUNCTION__);printf(args);printf("\n")
+
 static unsigned sws_flags = SWS_BICUBIC;
 
 typedef struct MyAVPacketList {
@@ -1379,6 +1381,8 @@ static double get_clock(Clock *c)
         return c->pts;
     } else {
         double time = av_gettime_relative() / 1000000.0;
+        //LOGI("(time - c->last_updated) * (1.0 - c->speed): %f", (time - c->last_updated) * (1.0 - c->speed));
+        // (time - c->last_updated) * (1.0 - c->speed) - 实际打印出来的值为0
         return c->pts_drift + time - (time - c->last_updated) * (1.0 - c->speed);
     }
 }
@@ -1532,17 +1536,24 @@ static double compute_target_delay(double delay, VideoState *is)
            duplicating or deleting a frame */
         diff = get_clock(&is->vidclk) - get_master_clock(is);
 
+        LOGI("vclk: %f aclk: %f diff: %f vpts: %f apts: %f", get_clock(&is->vidclk), get_master_clock(is), diff, is->vidclk.pts, is->audclk.pts);
         /* skip or repeat frame. We take into account the
            delay to compute the threshold. I still don't know
            if it is the best guess */
         sync_threshold = FFMAX(AV_SYNC_THRESHOLD_MIN, FFMIN(AV_SYNC_THRESHOLD_MAX, delay));
         if (!isnan(diff) && fabs(diff) < is->max_frame_duration) {
-            if (diff <= -sync_threshold)
+            if (diff <= -sync_threshold) {
+                LOGI("diff <= -sync_threshold");
                 delay = FFMAX(0, delay + diff);
-            else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD)
+            }
+            else if (diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD) {
+                LOGI("diff >= sync_threshold && delay > AV_SYNC_FRAMEDUP_THRESHOLD");
                 delay = delay + diff;
-            else if (diff >= sync_threshold)
+            }
+            else if (diff >= sync_threshold) {
+                LOGI("diff >= sync_threshold");
                 delay = 2 * delay;
+            }
         }
     }
 
@@ -2082,6 +2093,7 @@ static int audio_thread(void *arg)
                     goto the_end;
 
                 af->pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+                LOGI("decode a audio raw pts: %lld real pts: %f", frame->pts, af->pts);
                 af->pos = frame->pkt_pos;
                 af->serial = is->auddec.pkt_serial;
                 af->duration = av_q2d((AVRational){frame->nb_samples, frame->sample_rate});
@@ -2205,6 +2217,14 @@ static int video_thread(void *arg)
 #endif
             duration = (frame_rate.num && frame_rate.den ? av_q2d((AVRational){frame_rate.den, frame_rate.num}) : 0);
             pts = (frame->pts == AV_NOPTS_VALUE) ? NAN : frame->pts * av_q2d(tb);
+            {
+                static int i = 0;
+                if (i >= 50) {
+                    exit(0);
+                }
+                LOGI("decode a video frame, raw pts: %lld real pts: %f", frame->pts, pts);
+                i++;
+            }
             ret = queue_picture(is, frame, pts, duration, frame->pkt_pos, is->viddec.pkt_serial);
             av_frame_unref(frame);
 #if CONFIG_AVFILTER
@@ -2478,6 +2498,8 @@ static void sdl_audio_callback(void *opaque, Uint8 *stream, int len)
     is->audio_write_buf_size = is->audio_buf_size - is->audio_buf_index;
     /* Let's assume the audio driver that is used by SDL has two periods. */
     if (!isnan(is->audio_clock)) {
+        double aclk = is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec;
+        LOGI("sdl_audio_callback update audio clock: %f", aclk);
         set_clock_at(&is->audclk, is->audio_clock - (double)(2 * is->audio_hw_buf_size + is->audio_write_buf_size) / is->audio_tgt.bytes_per_sec, is->audio_clock_serial, audio_callback_time / 1000000.0);
         sync_clock_to_slave(&is->extclk, &is->audclk);
     }

@@ -76,7 +76,7 @@ static int adts_aac_probe(const AVProbeData *p)
 
     buf = buf0;
 
-    printf("adts_aac_probe\n");
+    //printf("adts_aac_probe\n");
     for (; buf < end; buf = buf2 + 1) {
         buf2 = buf;
 
@@ -114,22 +114,15 @@ static int adts_aac_probe(const AVProbeData *p)
             first_frames = frames;
     }
 
-    printf("first_frames:%d\n", first_frames);
-    printf("max_frames :%d\n", max_frames);
     if (first_frames >= 3) {
-        printf("adts_aac_probe return 51\n");
         return AVPROBE_SCORE_EXTENSION + 1;
     } else if (max_frames > 100) {
-        printf("adts_aac_probe return 50\n");
         return AVPROBE_SCORE_EXTENSION;
     } else if (max_frames >= 3) {
-        printf("adts_aac_probe return 25\n");
         return AVPROBE_SCORE_EXTENSION / 2;
     } else if (first_frames >= 1) {
-        printf("adts_aac_probe return 1\n");
         return 1;
     } else {
-        printf("adts_aac_probe return 0\n");
         return 0;
     }
 }

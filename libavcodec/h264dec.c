@@ -635,7 +635,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
     if (nals_needed < 0)
         return nals_needed;
 
-    trace_log("nb_nals:%d", h->pkt.nb_nals);
+    //trace_log("nb_nals:%d", h->pkt.nb_nals);
     for (i = 0; i < h->pkt.nb_nals; i++) {
         H2645NAL *nal = &h->pkt.nals[i];
         int max_slice_ctx, err;
@@ -651,7 +651,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
         err = 0;
         switch (nal->type) {
         case H264_NAL_IDR_SLICE:
-            printf("H264_NAL_IDR_SLICE\n");
+            //printf("H264_NAL_IDR_SLICE\n");
             if ((nal->data[1] & 0xFC) == 0x98) {
                 av_log(h->avctx, AV_LOG_ERROR, "Invalid inter IDR frame\n");
                 h->next_outputed_poc = INT_MIN;
@@ -664,7 +664,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
             idr_cleared = 1;
             h->has_recovery_point = 1;
         case H264_NAL_SLICE:
-            printf("H264_NAL_SLICE\n");
+            //printf("H264_NAL_SLICE\n");
             h->has_slice = 1;
 
             if ((err = ff_h264_queue_decode_slice(h, nal))) {
@@ -712,7 +712,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
                 goto end;
             break;
         case H264_NAL_SPS: {
-            printf("H264_NAL_SPS\n");
+            //printf("H264_NAL_SPS\n");
             GetBitContext tmp_gb = nal->gb;
             if (avctx->hwaccel && avctx->hwaccel->decode_params) {
                 ret = avctx->hwaccel->decode_params(avctx,
@@ -733,7 +733,7 @@ static int decode_nal_units(H264Context *h, const uint8_t *buf, int buf_size)
             break;
         }
         case H264_NAL_PPS:
-            printf("H264_NAL_PPS\n");
+            //printf("H264_NAL_PPS\n");
             if (avctx->hwaccel && avctx->hwaccel->decode_params) {
                 ret = avctx->hwaccel->decode_params(avctx,
                                                     nal->type,
